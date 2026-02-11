@@ -1,11 +1,42 @@
-<!-- 2025-12-13T22:40+09:00 index.html -->
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>toriaezu</title>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Side Scroll Shooter</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="page">
+      <header class="title">
+        <h1>Side Scroll Shooter</h1>
+        <p>Move: WASD / Arrow Keys &nbsp; Fire: Space &nbsp; Restart: R</p>
+      </header>
 
-toriae
+      <main class="stage">
+        <canvas id="game" width="960" height="540" aria-label="Side scrolling shooting game"></canvas>
+        <div class="hud" aria-live="polite">
+          <div class="hud-left">
+            <div class="hud-item">Score: <span id="score">0</span></div>
+            <div class="hud-item">Lives: <span id="lives">3</span></div>
+          </div>
+          <div class="hud-right">
+            <div class="hp">
+              <div class="hp-bar" id="hp-bar"></div>
+            </div>
+            <div class="hud-item" id="power">Power: None</div>
+          </div>
+        </div>
+        <div class="overlay" id="overlay" hidden>
+          <div class="overlay-card" id="overlay-text"></div>
+        </div>
+      </main>
 
-</body>
+      <footer class="notes">
+        <p>Defeat enemies, collect power-ups, and survive until the boss appears.</p>
+      </footer>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
 </html>
