@@ -434,7 +434,6 @@ document.querySelectorAll(".btn-control").forEach((button) => {
   });
 
   button.addEventListener("mouseleave", (event) => {
-    event.preventDefault();
     handleButtonRelease(button);
   });
 
