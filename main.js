@@ -372,6 +372,77 @@ document.addEventListener("keyup", (event) => {
   keys.delete(event.code);
 });
 
+// Virtual controller support
+const virtualButtons = {
+  up: { codes: ["ArrowUp", "KeyW"] },
+  down: { codes: ["ArrowDown", "KeyS"] },
+  left: { codes: ["ArrowLeft", "KeyA"] },
+  right: { codes: ["ArrowRight", "KeyD"] },
+  fire: { codes: ["Space"] },
+  restart: { codes: ["KeyR"] },
+};
+
+function handleButtonPress(button) {
+  const key = button.dataset.key;
+  if (!key || !virtualButtons[key]) return;
+
+  button.classList.add("active");
+
+  if (key === "restart" && (state.gameOver || state.win)) {
+    resetGame();
+    return;
+  }
+
+  virtualButtons[key].codes.forEach((code) => keys.add(code));
+}
+
+function handleButtonRelease(button) {
+  const key = button.dataset.key;
+  if (!key || !virtualButtons[key]) return;
+
+  button.classList.remove("active");
+  virtualButtons[key].codes.forEach((code) => keys.delete(code));
+}
+
+// Add event listeners to all virtual controller buttons
+document.querySelectorAll(".btn-control").forEach((button) => {
+  // Touch events
+  button.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    handleButtonPress(button);
+  });
+
+  button.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    handleButtonRelease(button);
+  });
+
+  button.addEventListener("touchcancel", (event) => {
+    event.preventDefault();
+    handleButtonRelease(button);
+  });
+
+  // Mouse events (for desktop testing)
+  button.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    handleButtonPress(button);
+  });
+
+  button.addEventListener("mouseup", (event) => {
+    event.preventDefault();
+    handleButtonRelease(button);
+  });
+
+  button.addEventListener("mouseleave", (event) => {
+    handleButtonRelease(button);
+  });
+
+  // Prevent context menu on long press
+  button.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+});
+
 initStars();
 resetGame();
 requestAnimationFrame(loop);

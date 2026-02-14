@@ -134,6 +134,124 @@ canvas {
   opacity: 0.7;
 }
 
+/* Virtual Controller */
+.virtual-controller {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px;
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.controller-section {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controller-dpad {
+  align-items: center;
+}
+
+.dpad-middle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dpad-center {
+  width: 60px;
+  height: 60px;
+}
+
+.controller-actions {
+  gap: 12px;
+}
+
+.btn-control {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #f4f6fb;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-control:active {
+  background: rgba(247, 201, 72, 0.3);
+  border-color: var(--neon);
+  transform: scale(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(247, 201, 72, 0.3);
+}
+
+.btn-control.active {
+  background: rgba(247, 201, 72, 0.3);
+  border-color: var(--neon);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(247, 201, 72, 0.3);
+}
+
+/* D-pad buttons */
+.btn-up,
+.btn-down,
+.btn-left,
+.btn-right {
+  width: 60px;
+  height: 60px;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* Action buttons */
+.btn-action {
+  width: 100px;
+  height: 60px;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.btn-fire {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.btn-fire:active,
+.btn-fire.active {
+  background: rgba(255, 107, 107, 0.4);
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 107, 107, 0.4);
+}
+
+.btn-restart {
+  background: rgba(83, 255, 164, 0.15);
+  border-color: rgba(83, 255, 164, 0.3);
+}
+
+.btn-restart:active,
+.btn-restart.active {
+  background: rgba(83, 255, 164, 0.3);
+  border-color: #53ffa4;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(83, 255, 164, 0.4);
+}
+
 @media (max-width: 720px) {
   .hud {
     inset: 10px;
@@ -147,5 +265,64 @@ canvas {
 
   .hp {
     width: 120px;
+  }
+
+  .virtual-controller {
+    bottom: 10px;
+    padding: 0 10px;
+  }
+
+  .btn-up,
+  .btn-down,
+  .btn-left,
+  .btn-right {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .dpad-center {
+    width: 50px;
+    height: 50px;
+  }
+
+  .btn-action {
+    width: 85px;
+    height: 50px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .virtual-controller {
+    padding: 0 5px;
+  }
+
+  .btn-up,
+  .btn-down,
+  .btn-left,
+  .btn-right {
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+  }
+
+  .dpad-center {
+    width: 45px;
+    height: 45px;
+  }
+
+  .btn-action {
+    width: 75px;
+    height: 45px;
+    font-size: 13px;
+  }
+
+  .controller-section {
+    gap: 6px;
+  }
+
+  .dpad-middle {
+    gap: 6px;
   }
 }

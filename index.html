@@ -10,7 +10,7 @@
     <div class="page">
       <header class="title">
         <h1>Side Scroll Shooter!</h1>
-        <p>Move: WASD / Arrow Keys &nbsp; Fire: Space &nbsp; Restart: R</p>
+        <p>Move: WASD / Arrow Keys / Virtual Pad &nbsp; Fire: Space / FIRE Button &nbsp; Restart: R / RESTART Button</p>
       </header>
 
       <main class="stage">
@@ -35,6 +35,23 @@
       <footer class="notes">
         <p>Defeat enemies, collect power-ups, and survive until the boss appears.</p>
       </footer>
+    </div>
+
+    <!-- Virtual Controller -->
+    <div class="virtual-controller" id="virtual-controller">
+      <div class="controller-section controller-dpad">
+        <button class="btn-control btn-up" data-key="up" aria-label="Move Up">↑</button>
+        <div class="dpad-middle">
+          <button class="btn-control btn-left" data-key="left" aria-label="Move Left">←</button>
+          <div class="dpad-center"></div>
+          <button class="btn-control btn-right" data-key="right" aria-label="Move Right">→</button>
+        </div>
+        <button class="btn-control btn-down" data-key="down" aria-label="Move Down">↓</button>
+      </div>
+      <div class="controller-section controller-actions">
+        <button class="btn-control btn-action btn-fire" data-key="fire" aria-label="Fire">FIRE</button>
+        <button class="btn-control btn-action btn-restart" data-key="restart" aria-label="Restart">RESTART</button>
+      </div>
     </div>
 
     <script src="main.js"></script>
