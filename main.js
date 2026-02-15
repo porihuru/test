@@ -26,6 +26,14 @@ const state = {
   win: false,
 };
 
+const POWER_UP_TYPES = [
+  { name: 'Rapid Fire', color: '#53ffa4' },
+  { name: 'Shield', color: '#00d9ff' },
+  { name: 'Triple Shot', color: '#ff9500' },
+  { name: 'Speed Boost', color: '#ffeb3b' },
+  { name: 'Homing Missiles', color: '#ff6b6b' }
+];
+
 const player = {
   x: 120,
   y: H / 2,
@@ -34,6 +42,8 @@ const player = {
   cooldown: 0,
   powerTimer: 0,
   hitCooldown: 0,
+  powerType: null,
+  shieldHits: 0,
 };
 
 let spawnTimer = 0;
@@ -64,6 +74,8 @@ function resetGame() {
   player.cooldown = 0;
   player.powerTimer = 0;
   player.hitCooldown = 0;
+  player.powerType = null;
+  player.shieldHits = 0;
 
   bullets.length = 0;
   enemies.length = 0;
@@ -80,7 +92,14 @@ function updateHud() {
   scoreEl.textContent = String(state.score);
   livesEl.textContent = String(state.lives);
   hpBarEl.style.width = `${Math.max(0, state.hp)}%`;
-  powerEl.textContent = player.powerTimer > 0 ? "Power: Rapid" : "Power: None";
+  
+  if (player.powerTimer > 0 && player.powerType !== null) {
+    const powerName = POWER_UP_TYPES[player.powerType].name;
+    const shieldInfo = player.powerType === 1 ? ` (${player.shieldHits} hits)` : '';
+    powerEl.textContent = `Power: ${powerName}${shieldInfo}`;
+  } else {
+    powerEl.textContent = "Power: None";
+  }
 }
 
 function showOverlay(message) {
@@ -119,26 +138,93 @@ function spawnEnemy(isBoss) {
 }
 
 function spawnPowerUp() {
+  const type = Math.floor(Math.random() * POWER_UP_TYPES.length);
   powerUps.push({
     x: W + 40,
     y: Math.random() * (H - 100) + 50,
     radius: 12,
     speed: 2.6,
+    type: type,
   });
 }
 
 function shoot() {
-  const hasPower = player.powerTimer > 0;
-  const spread = hasPower ? [-8, 8] : [0];
-  spread.forEach((offset) => {
+  const powerType = player.powerType;
+  
+  // Rapid Fire: 2 bullets with offset
+  if (powerType === 0) {
+    const spread = [-8, 8];
+    spread.forEach((offset) => {
+      bullets.push({
+        x: player.x + 18,
+        y: player.y + offset,
+        radius: 4,
+        speed: 8.2,
+        type: 'normal',
+      });
+    });
+    player.cooldown = 6;
+  }
+  // Shield: normal shooting
+  else if (powerType === 1) {
     bullets.push({
       x: player.x + 18,
-      y: player.y + offset,
+      y: player.y,
       radius: 4,
       speed: 8.2,
+      type: 'normal',
     });
-  });
-  player.cooldown = hasPower ? 6 : 10;
+    player.cooldown = 10;
+  }
+  // Triple Shot: 3 directions
+  else if (powerType === 2) {
+    const angles = [-0.3, 0, 0.3]; // forward, up diagonal, down diagonal
+    angles.forEach((angle) => {
+      bullets.push({
+        x: player.x + 18,
+        y: player.y,
+        radius: 4,
+        speed: 8.2,
+        dx: Math.cos(angle),
+        dy: Math.sin(angle),
+        type: 'normal',
+      });
+    });
+    player.cooldown = 10;
+  }
+  // Speed Boost: normal shooting
+  else if (powerType === 3) {
+    bullets.push({
+      x: player.x + 18,
+      y: player.y,
+      radius: 4,
+      speed: 8.2,
+      type: 'normal',
+    });
+    player.cooldown = 10;
+  }
+  // Homing Missiles
+  else if (powerType === 4) {
+    bullets.push({
+      x: player.x + 18,
+      y: player.y,
+      radius: 4,
+      speed: 8.2,
+      type: 'homing',
+    });
+    player.cooldown = 10;
+  }
+  // No power: normal shooting
+  else {
+    bullets.push({
+      x: player.x + 18,
+      y: player.y,
+      radius: 4,
+      speed: 8.2,
+      type: 'normal',
+    });
+    player.cooldown = 10;
+  }
 }
 
 function hitTest(a, b) {
@@ -156,22 +242,59 @@ function update(dt) {
   player.cooldown = Math.max(0, player.cooldown - dt);
   player.powerTimer = Math.max(0, player.powerTimer - dt);
   player.hitCooldown = Math.max(0, player.hitCooldown - dt);
+  
+  // Reset power type when timer expires
+  if (player.powerTimer <= 0) {
+    player.powerType = null;
+    player.shieldHits = 0;
+  }
 
   const moveX = (keys.has("ArrowRight") || keys.has("KeyD")) - (keys.has("ArrowLeft") || keys.has("KeyA"));
   const moveY = (keys.has("ArrowDown") || keys.has("KeyS")) - (keys.has("ArrowUp") || keys.has("KeyW"));
 
-  player.x = clamp(player.x + moveX * player.speed * dt, 40, W - 40);
-  player.y = clamp(player.y + moveY * player.speed * dt, 40, H - 40);
+  // Speed Boost: 1.5x movement speed
+  const speedMultiplier = player.powerType === 3 ? 1.5 : 1;
+  player.x = clamp(player.x + moveX * player.speed * speedMultiplier * dt, 40, W - 40);
+  player.y = clamp(player.y + moveY * player.speed * speedMultiplier * dt, 40, H - 40);
 
   if ((keys.has("Space") || keys.has("KeyJ")) && player.cooldown <= 0) {
     shoot();
   }
 
   bullets.forEach((bullet) => {
-    bullet.x += bullet.speed * dt;
+    if (bullet.type === 'homing' && enemies.length > 0) {
+      // Find nearest enemy
+      let nearest = enemies[0];
+      let minDist = Infinity;
+      enemies.forEach((enemy) => {
+        const dx = enemy.x - bullet.x;
+        const dy = enemy.y - bullet.y;
+        const dist = dx * dx + dy * dy;
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = enemy;
+        }
+      });
+      
+      // Move toward nearest enemy
+      const dx = nearest.x - bullet.x;
+      const dy = nearest.y - bullet.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        bullet.x += (dx / dist) * bullet.speed * dt;
+        bullet.y += (dy / dist) * bullet.speed * dt;
+      }
+    } else if (bullet.dx !== undefined && bullet.dy !== undefined) {
+      // Triple shot with angles
+      bullet.x += bullet.dx * bullet.speed * dt;
+      bullet.y += bullet.dy * bullet.speed * dt;
+    } else {
+      // Normal bullet movement
+      bullet.x += bullet.speed * dt;
+    }
   });
   for (let i = bullets.length - 1; i >= 0; i -= 1) {
-    if (bullets[i].x > W + 40) {
+    if (bullets[i].x > W + 40 || bullets[i].x < -40 || bullets[i].y > H + 40 || bullets[i].y < -40) {
       bullets.splice(i, 1);
     }
   }
@@ -240,14 +363,26 @@ function update(dt) {
 
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     if (hitTest(enemies[i], player) && player.hitCooldown <= 0) {
-      player.hitCooldown = 45;
-      state.hp -= enemies[i].type === "boss" ? 40 : 20;
-      if (state.hp <= 0) {
-        state.lives -= 1;
-        state.hp = 100;
-        if (state.lives <= 0) {
-          state.gameOver = true;
-          showOverlay("Game Over - Press R to restart");
+      // Shield absorbs hits
+      if (player.powerType === 1 && player.shieldHits < 3) {
+        player.shieldHits += 1;
+        player.hitCooldown = 45;
+        if (player.shieldHits >= 3) {
+          // Shield depleted
+          player.powerTimer = 0;
+          player.powerType = null;
+          player.shieldHits = 0;
+        }
+      } else {
+        player.hitCooldown = 45;
+        state.hp -= enemies[i].type === "boss" ? 40 : 20;
+        if (state.hp <= 0) {
+          state.lives -= 1;
+          state.hp = 100;
+          if (state.lives <= 0) {
+            state.gameOver = true;
+            showOverlay("Game Over - Press R to restart");
+          }
         }
       }
     }
@@ -255,8 +390,11 @@ function update(dt) {
 
   for (let i = powerUps.length - 1; i >= 0; i -= 1) {
     if (hitTest(powerUps[i], player)) {
+      const powerUp = powerUps[i];
       powerUps.splice(i, 1);
       player.powerTimer = 300;
+      player.powerType = powerUp.type;
+      player.shieldHits = 0;
       state.score += 40;
     }
   }
@@ -284,6 +422,18 @@ function drawBackground() {
 function drawPlayer() {
   ctx.save();
   ctx.translate(player.x, player.y);
+  
+  // Draw shield effect if active
+  if (player.powerType === 1 && player.shieldHits < 3) {
+    ctx.strokeStyle = '#00d9ff';
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius + 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  
   ctx.fillStyle = "#78f0ff";
   ctx.beginPath();
   ctx.moveTo(18, 0);
@@ -301,8 +451,8 @@ function drawPlayer() {
 }
 
 function drawBullets() {
-  ctx.fillStyle = "#ffdf7e";
   bullets.forEach((bullet) => {
+    ctx.fillStyle = bullet.type === 'homing' ? '#ff6b6b' : '#ffdf7e';
     ctx.beginPath();
     ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -326,7 +476,7 @@ function drawEnemies() {
 
 function drawPowerUps() {
   powerUps.forEach((item) => {
-    ctx.fillStyle = "#53ffa4";
+    ctx.fillStyle = POWER_UP_TYPES[item.type].color;
     ctx.beginPath();
     ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
     ctx.fill();
