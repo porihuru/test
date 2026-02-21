@@ -26,6 +26,57 @@ const state = {
   win: false,
 };
 
+const enemyTypeConfigs = [
+  {
+    type: "grunt",
+    weight: 42,
+    minRadius: 16,
+    maxRadius: 26,
+    speedMin: 2,
+    speedMax: 4,
+    hp: 1,
+    score: 20,
+    damage: 20,
+    color: "#5f8bff",
+  },
+  {
+    type: "swift",
+    weight: 24,
+    minRadius: 11,
+    maxRadius: 16,
+    speedMin: 4.8,
+    speedMax: 6.5,
+    hp: 1,
+    score: 30,
+    damage: 15,
+    color: "#5affc5",
+  },
+  {
+    type: "tank",
+    weight: 20,
+    minRadius: 24,
+    maxRadius: 30,
+    speedMin: 1.3,
+    speedMax: 2.1,
+    hp: 3,
+    score: 45,
+    damage: 30,
+    color: "#a77cff",
+  },
+  {
+    type: "zigzag",
+    weight: 14,
+    minRadius: 14,
+    maxRadius: 20,
+    speedMin: 2.8,
+    speedMax: 4.2,
+    hp: 2,
+    score: 35,
+    damage: 25,
+    color: "#ff9a62",
+  },
+];
+
 const player = {
   x: 120,
   y: H / 2,
@@ -92,6 +143,20 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function pickEnemyConfig() {
+  const totalWeight = enemyTypeConfigs.reduce((sum, config) => sum + config.weight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (let i = 0; i < enemyTypeConfigs.length; i += 1) {
+    roll -= enemyTypeConfigs[i].weight;
+    if (roll <= 0) {
+      return enemyTypeConfigs[i];
+    }
+  }
+
+  return enemyTypeConfigs[0];
+}
+
 function spawnEnemy(isBoss) {
   if (isBoss) {
     enemies.push({
@@ -101,19 +166,26 @@ function spawnEnemy(isBoss) {
       speed: 1.2,
       hp: 220,
       type: "boss",
+      score: 300,
+      damage: 40,
+      color: "#ff6b6b",
       wobble: 0,
     });
     return;
   }
 
-  const radius = Math.random() * 10 + 16;
+  const config = pickEnemyConfig();
+  const radius = Math.random() * (config.maxRadius - config.minRadius) + config.minRadius;
   enemies.push({
     x: W + radius + 20,
     y: Math.random() * (H - 80) + 40,
     radius,
-    speed: Math.random() * 2 + 2,
-    hp: 1,
-    type: "grunt",
+    speed: Math.random() * (config.speedMax - config.speedMin) + config.speedMin,
+    hp: config.hp,
+    type: config.type,
+    score: config.score,
+    damage: config.damage,
+    color: config.color,
     wobble: Math.random() * Math.PI * 2,
   });
 }
@@ -198,10 +270,21 @@ function update(dt) {
     if (enemy.type === "boss") {
       enemy.wobble += 0.02 * dt;
       enemy.y = H / 2 + Math.sin(enemy.wobble) * 120;
+    } else if (enemy.type === "swift") {
+      enemy.wobble += 0.11 * dt;
+      enemy.y += Math.sin(enemy.wobble * 2.4) * 1.4 * dt;
+    } else if (enemy.type === "tank") {
+      enemy.wobble += 0.015 * dt;
+      enemy.y += Math.sin(enemy.wobble) * 0.2 * dt;
+    } else if (enemy.type === "zigzag") {
+      enemy.wobble += 0.08 * dt;
+      enemy.y += Math.sin(enemy.wobble) * 2.2 * dt;
     } else {
       enemy.wobble += 0.03 * dt;
       enemy.y += Math.sin(enemy.wobble) * 0.5 * dt;
     }
+
+    enemy.y = clamp(enemy.y, enemy.radius + 8, H - enemy.radius - 8);
   });
 
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
@@ -226,8 +309,9 @@ function update(dt) {
         enemies[i].hp -= 1;
         if (enemies[i].hp <= 0) {
           const isBoss = enemies[i].type === "boss";
+          const gainedScore = enemies[i].score || 20;
           enemies.splice(i, 1);
-          state.score += isBoss ? 300 : 20;
+          state.score += gainedScore;
           if (isBoss) {
             state.win = true;
             showOverlay("You Win! Press R to restart");
@@ -241,7 +325,7 @@ function update(dt) {
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     if (hitTest(enemies[i], player) && player.hitCooldown <= 0) {
       player.hitCooldown = 45;
-      state.hp -= enemies[i].type === "boss" ? 40 : 20;
+      state.hp -= enemies[i].damage || 20;
       if (state.hp <= 0) {
         state.lives -= 1;
         state.hp = 100;
@@ -311,7 +395,7 @@ function drawBullets() {
 
 function drawEnemies() {
   enemies.forEach((enemy) => {
-    ctx.fillStyle = enemy.type === "boss" ? "#ff6b6b" : "#5f8bff";
+    ctx.fillStyle = enemy.color || "#5f8bff";
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
     ctx.fill();
